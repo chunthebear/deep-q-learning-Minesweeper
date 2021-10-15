@@ -127,7 +127,7 @@ We excluded Structure 1 from our tests, since we had already established the poo
 mance of the agent using that structure.
 
 To compare the three remaining structures, we tested multiple episodes on different board
-sizes (Appendix A). The performance is judged based on the percentage of games won dur-
+sizes. The performance is judged based on the percentage of games won dur-
 ing testing. The overall results pointed towards the comparatively worse performance of
 Structure 4. However, the performance of Structure 2 and Structure 3 were relatively close.
 To further obtain the best structure to use, we compared Structure 2 and Structure 3.
@@ -138,7 +138,7 @@ even though not by a substantial difference. This could potentially mean that St
 is overcomplicating the reward structure, and trying harder to control the agent does not
 lead to better results.
 
-![image](https://user-images.githubusercontent.com/16961563/137454152-f77a9b62-1f9d-4661-9216-0326ab9474df.png)
+![image](https://user-images.githubusercontent.com/16961563/137455879-8fa968df-5f5a-4ea5-93e5-5abac5f5dff7.png)
 
 Since Structure 2 performed better when tested, we chose to train our Q-learning and deep
 Q-learning agents using this structure. Recall that this structure positively rewarded for
@@ -151,7 +151,7 @@ value for each pairwise combination of states and actions. For any state, the ac
 provides the maximum Q-value for that state in the table represents the best possible action.
 After each action, the corresponding Q-value is updated by using the Bellman equation [5]:
 
-![image](https://user-images.githubusercontent.com/16961563/137454056-3fd03a7f-5c14-4f93-a0be-2ee776ae92f5.png)
+![image](https://user-images.githubusercontent.com/16961563/137455859-b44f47cf-ec6e-49dc-b03e-b980ff588993.png)
 
 The agent learns through a combination of exploitation and exploration: choosing the best
 possible action using the Q-table, or choosing a random action, respectively. During training,
@@ -160,4 +160,161 @@ epsilon, representing the chance an action is explorative. At each step, the exp
 reduced to progressively reduce the amount of random actions taken. The basic pseudocode
 for the algorithm is defined below [6].
 
-![image](https://user-images.githubusercontent.com/16961563/137454015-15ee8268-2ed7-4b06-b092-f9eee968b1ba.png)
+![image](https://user-images.githubusercontent.com/16961563/137455844-d74c36d5-7233-44f1-9553-b835f0ec986a.png)
+
+### 5.1 Hyperparameter Tuning
+
+Once the Q-learning was implemented, we began tuning each of four hyperparameters to
+optimize the agent's results. To do this, a range of values was created for each parameter.
+Then, for each varied parameter value, a 4 x 4 board was used to run the agent for 40,000
+episodes for training. The training's generated Q-table was then used for testing over 8000
+episodes. Within each round the score, win percentage, and board completion was recorded
+in order to be graphed against the parameter. Using these graphs, the optimized hyperparameter was selected.
+
+- The discount rate, gamma, in range(0; 1]
+The discount rate quantifies the importance of future rewards { a smaller value pri-
+oritizes immediate rewards, while a higher value places emphasis on future rewards.
+There was a slight increase in win percentage as discount rate increased, with 0.90 giv-
+ing the highest test win rate. At 0.90, the agent will heavily consider future rewards
+over immediate rewards.
+- The learning rate, alpha, in range (0; 1]
+The learning rate dictates to what extent newly-learnt information overrides existing
+information. With the best value of 0.05, the agent relies heavily on prior knowledge,
+learning very little for each step.
+- The minimum exploration rate, epsilon_min <= 0:1
+As the exploration rate decays, it controls the limit of exploitation. The smaller the
+value, the less exploration will occur as the agent progresses through training. There
+was a steady decline in win rate as epsilon_min increased, so we selected a small value of
+0.005.
+- The exploration decay rate, epsilon_decay <= 0:02
+The epsilon decay rate defines how much the exploration rate will decrease after each
+episode. The win percentage remained mostly uniform as epsilon_decay grew, but peaked
+when at 0.01, resulting in a gradual exploration decay.
+
+![image](https://user-images.githubusercontent.com/16961563/137454581-21fef709-4398-4aa5-9a80-aa80feda338b.png)
+
+### 5.2 Results
+
+Agents were trained and tested using the Q-learning algorithm for various numbers of
+episodes, the results of which are summarized in Table 3.
+
+![image](https://user-images.githubusercontent.com/16961563/137454631-835b05b5-bc4e-4d0a-89d5-a234514b850e.png)
+
+The final test agent (Agent 4 tested with 1,996,000 episodes) achieved a board completion of
+58.4%. As the number of training episodes increases, the agent seems to approach a win-rate
+in the 13% to 14% range. Looking at the testing results, the agents do not show evidence
+of overfitting, and thus could be further trained to theoretically increase their accuracy.
+
+## 6 Deep Q-Learning
+
+### 6.1 Motivation
+
+The greatest constraint of the Q-learning implementation is the spatial complexity of the
+Q-table. The maximum size of the Q-table is the product of possible states and possible
+actions, given by:
+![image](https://user-images.githubusercontent.com/16961563/137454732-8886e68f-6798-4299-b5a9-68b476121e5e.png)
+
+Where n is the board size and m is the number of mines. The value 11 indicates the
+number of possible values in any cell, ranging from -2 to 8, as explained before. Even by
+reducing the problem to a 4 x 4 board with 4 mines, a filled Q-table would have 716 x 16 x
+5.3 x 10^14 values. Although a successful agent will not need a full Q-table, the Q-learning
+implementation requires both more training time and more storage to produce desirable
+results. This limitation served as a motivation to move towards addressing the problem
+with a deep Q-learning model.
+
+### 6.2 Method
+
+The deep Q-learning algorithm replaces the previous Q-table with a neural network to pre-
+dict Q-values based on the current state to choose the best action. A simple 5-layered neural
+network is used. The Bellman equation is now simpler, excluding
+the hyperparameter learning rate (since the back-propagation in the neural network already
+has it optimized by an optimizer) [7]:
+
+![image](https://user-images.githubusercontent.com/16961563/137454868-ec6953a0-9425-4b37-b1f6-07ac57016261.png)
+
+The rest of the tuned hyperparameter values are used. As the agent gets trained, it stores its
+experience in a sequential memory with a certain limit, and this experience is used to further
+train the agent. The current neural network predicts the Q-values for the old state, and the
+new state by taking a certain action. Then, a new set of target Q-values is calculated using
+the bellman equation, and the neural network can be further trained with the old state as
+the input, and the target Q-values as the output. The rest of the Q-learning algorithm stays
+the same.
+
+### Results
+
+![image](https://user-images.githubusercontent.com/16961563/137454976-da008f12-e86f-4d66-a6c7-7122d9beffaf.png)
+
+As seen in the plot, the reward increases at a higher rate at the beginning of training, then
+increases steadily. After being trained for roughly 350,000 episodes (1,900,000 steps), the
+agent achieves a reward of 0.194. If trained for more time, the reward will still likely in-
+crease, but due to the long training hours, we stopped at 350,000 episodes to see how it
+performs against the normal Q-agent. After testing for 86,000 episodes, it achieves an aver-
+age reward of 0.3854, a winning percentage of 16.87%, and a board completion rate of 42.7%.
+
+Compared with the normal Q-agent, the average reward is generally lower possibly be-
+cause the deep agent has not yet completely learned to not step on the same cell repeatedly
+judging from its visualization, receiving negative rewards. Moreover, the normal Q-agent
+manages to achieve a higher board completion rate. However, one should note that the deep
+agent is trained for about 23 times fewer episodes within roughly the same amount of time
+of 8 hours, and still achieves a higher winning percentage.
+
+## 7 Conclusion
+
+Reward structure is critical in determining the agent's ability to succeed. Naivety is a
+danger, but over-complexity can weaken the agent's policy as well. Comparing Q learning
+with deep Q learning algorithms, deep Q learning takes more time to train. Trained for
+the same amount of time, the normal Q agent performs better in terms of average reward
+and board completion rate, but the deep agent has a higher winning rate. Hence, it is
+unclear to say one is necessarily better than the other, but it is likely that the deep agent
+will outperform the normal Q agent if trained for the same amount of episodes, and it is
+more practical for a larger board. Both the trained normal Q agent and deep agent perform
+substantially better than the baseline random agent. More generally, Q table suffers from
+a finite state space, but a deep Q neural net does not since the size of Q table increases
+substantially as training or board size increases, while the size of weights for a neural net
+stays relatively stable.
+
+### 7.1 Future Work
+It is likely that given the time, more training will yield better results. There are also a few
+more hyperparameters to be tuned for deep Q learning:
+- target model update to determine how often the target copied network should be
+updated
+- nb steps warmup to determine how long we wait before actually training the net-
+work
+- Memory limit for experience relay
+Different neural net structures could be experimented more, such as convolutional neural net
+(CNN) and recurrent neural net (RNN). We did try using CNN but a phenomenon called
+catastrophic forgetting occurred where the agent unlearns its experience in an unexpected
+way, having initially increasing rewards and then drastically decreasing rewards afterwards.
+Lastly, an interesting question to ask is: is there a way to utilize the Q table / neural
+network from smaller boards to be combined to a larger one for a larger board?
+
+## Acknowledgement
+I would like to thank my group members Janhavi Dudhat, Sam Kosman, Scott Theriault, Zak White, and Nick Hird, and professor Dr. Nishant Mehta, for conducting the amazing work with me. 
+
+## References
+References
+[1] R. Kaye, \Minesweeper is NP-complete," The Mathematical Intelligencer, vol. 22, pp. 9{
+15, 2000. doi: 10.1007/BF03025367.
+
+[2] L. Gardea, G. Koontz, and R. Silva, \Training a Minesweeper Solver," 2015. [Online].
+Available: http://cs229.stanford.edu/proj2015/372_report.pdf (visited on
+01/19/2021).
+
+[3] S. Lee. (2020). \I trained an A.I. to beat Minesweeper.. without teaching it any rules!"
+[Online]. Available: https://sdlee94.github.io/Minesweeper-AI-Reinforcement-
+Learning/ (visited on 01/19/2021).
+
+[4] A. Mehta, \Reinforcement Learning For Constraint Satisfaction Game Agents," 2020.
+[Online]. Available: https://arxiv.org/ftp/arxiv/papers/2102/2102.06019.pdf
+(visited on 04/01/2021).
+
+[5] T. M. Mitchell, \Machine Learning," in. McGraw-Hill, 1997, ch. 13, p. 386, isbn: 978-
+0-07-042807-2.
+
+[6] M. G. Castro. (2020). \Q-learning: A basic off-policy reinforcement learning algorithm,"
+[Online]. Available: http://www.eecs.tufts.edu/~mguama01/post/q-learning/
+(visited on 01/19/2021).
+
+[7] J. Kiili. (2019). \Reinforcement Learning Tutorial Part 3: Basic Deep Q-Learning,"
+[Online]. Available: https://towardsdatascience.com/reinforcement-learning-
+tutorial-part-3-basic-deep-q-learning-186164c3bf4 (visited on 03/12/2021).
