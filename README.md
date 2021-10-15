@@ -293,7 +293,7 @@ network from smaller boards to be combined to a larger one for a larger board?
 I would like to thank my group members Janhavi Dudhat, Sam Kosman, Scott Theriault, Zak White, and Nick Hird, and professor Dr. Nishant Mehta, for conducting the amazing work with me. 
 
 ## References
-References
+
 [1] R. Kaye, \Minesweeper is NP-complete," The Mathematical Intelligencer, vol. 22, pp. 9{
 15, 2000. doi: 10.1007/BF03025367.
 
