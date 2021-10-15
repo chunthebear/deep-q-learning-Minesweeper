@@ -139,3 +139,25 @@ is overcomplicating the reward structure, and trying harder to control the agent
 lead to better results.
 
 ![Figure 1](/pics/f1.png)
+
+Since Structure 2 performed better when tested, we chose to train our Q-learning and deep
+Q-learning agents using this structure. Recall that this structure positively rewarded for
+winning (+1) and opening a new cell (+0.3), and negatively rewarded for losing (-1) and
+reopening an already opened cell (-0.3).
+
+## 5 Q-Learning
+The implementation of Q-learning involves the construction of a Q-table which holds a Q-
+value for each pairwise combination of states and actions. For any state, the action that
+provides the maximum Q-value for that state in the table represents the best possible action.
+After each action, the corresponding Q-value is updated by using the Bellman equation [5]:
+
+![Bellman](/pics/bell.png)
+
+The agent learns through a combination of exploitation and exploration: choosing the best
+possible action using the Q-table, or choosing a random action, respectively. During training,
+the decision between exploration and exploitation is dictated by the exploration parameter
+epsilon, representing the chance an action is explorative. At each step, the exploration rate is
+reduced to progressively reduce the amount of random actions taken. The basic pseudocode
+for the algorithm is defined below [6].
+
+![image](https://user-images.githubusercontent.com/16961563/137453865-98a56986-313b-4cf0-afd8-a65b3ecd083f.png)
