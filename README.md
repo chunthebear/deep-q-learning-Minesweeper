@@ -281,6 +281,7 @@ updated
 - nb steps warmup to determine how long we wait before actually training the net-
 work
 - Memory limit for experience relay
+- 
 Different neural net structures could be experimented more, such as convolutional neural net
 (CNN) and recurrent neural net (RNN). We did try using CNN but a phenomenon called
 catastrophic forgetting occurred where the agent unlearns its experience in an unexpected
