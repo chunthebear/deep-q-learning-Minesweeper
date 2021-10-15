@@ -69,8 +69,8 @@ the environment,
 
 The first environment we used was a naive implementation, containing a basic 2D matrix
 representing the game board. Each matrix value contained one of: a number from 0 to
-8, corresponding to the number of adjacent mines; a-2, indicating an unopened cell; or
-􀀀1, a mine. The scope of possible actions is any cell { imposing the possibility of selecting
+8, corresponding to the number of adjacent mines; a -2, indicating an unopened cell; or
+-1, a mine. The scope of possible actions is any cell { imposing the possibility of selecting
 a previously-opened cell. Because of this flaw, and the lack of penalization for repeated
 actions, the agent would often get stuck and fail to learn.
 
