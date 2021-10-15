@@ -1,2 +1,2 @@
-# deep-q-learning-Minesweeper
+# AI Minesweeper with Q Learning and Deep Q Learning
  
