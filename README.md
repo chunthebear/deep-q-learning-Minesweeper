@@ -138,7 +138,7 @@ even though not by a substantial difference. This could potentially mean that St
 is overcomplicating the reward structure, and trying harder to control the agent does not
 lead to better results.
 
-![Figure 1](/pics/f1.png)
+![image](https://user-images.githubusercontent.com/16961563/137454152-f77a9b62-1f9d-4661-9216-0326ab9474df.png)
 
 Since Structure 2 performed better when tested, we chose to train our Q-learning and deep
 Q-learning agents using this structure. Recall that this structure positively rewarded for
@@ -151,7 +151,7 @@ value for each pairwise combination of states and actions. For any state, the ac
 provides the maximum Q-value for that state in the table represents the best possible action.
 After each action, the corresponding Q-value is updated by using the Bellman equation [5]:
 
-![Bellman](/pics/bell.png)
+![image](https://user-images.githubusercontent.com/16961563/137454056-3fd03a7f-5c14-4f93-a0be-2ee776ae92f5.png)
 
 The agent learns through a combination of exploitation and exploration: choosing the best
 possible action using the Q-table, or choosing a random action, respectively. During training,
@@ -160,4 +160,4 @@ epsilon, representing the chance an action is explorative. At each step, the exp
 reduced to progressively reduce the amount of random actions taken. The basic pseudocode
 for the algorithm is defined below [6].
 
-![image](https://user-images.githubusercontent.com/16961563/137453865-98a56986-313b-4cf0-afd8-a65b3ecd083f.png)
+![image](https://user-images.githubusercontent.com/16961563/137454015-15ee8268-2ed7-4b06-b092-f9eee968b1ba.png)
