@@ -191,192 +191,6 @@ def to_s(row, col):
     return row*ncol + col
 
 
-class MinesweeperDiscreetEnv(gym.Env):
-    metadata = {"render.modes": ["ansi", "human"]}
-
-    def __init__(self, board_size=BOARD_SIZE, num_mines=NUM_MINES):
-        """
-        Create a minesweeper game.
-        Parameters
-        ----
-        board_size: int     shape of the board
-            - int: the same as (int, int)
-        num_mines: int   num mines on board
-        """
-
-        self.board_size = board_size
-        self.num_mines = num_mines
-        self.board = place_mines(board_size, num_mines)
-        self.my_board = np.ones((board_size, board_size), dtype=int) * CLOSED
-        self.num_actions = 0
-
-        self.observation_space = spaces.Box(low=-2, high=9,
-                                            shape=(self.board_size, self.board_size), dtype=np.int)
-        self.action_space = spaces.Discrete(self.board_size*self.board_size)
-        self.valid_actions = np.ones((self.board_size * self.board_size), dtype=np.bool)
-
-    def count_neighbour_mines(self, x, y):
-        """return number of mines in neighbour cells given an x-y coordinate
-            Cell -->Current Cell(row, col)
-            N -->  North(row - 1, col)
-            S -->  South(row + 1, col)
-            E -->  East(row, col + 1)
-            W -->  West(row, col - 1)
-            N.E --> North - East(row - 1, col + 1)
-            N.W --> North - West(row - 1, col - 1)
-            S.E --> South - East(row + 1, col + 1)
-            S.W --> South - West(row + 1, col - 1)
-        """
-        neighbour_mines = 0
-        for _x in range(x - 1, x + 2):
-            for _y in range(y - 1, y + 2):
-                if is_valid(_x, _y):
-                    if is_mine(self.board, _x, _y):
-                        neighbour_mines += 1
-        return neighbour_mines
-
-    def open_neighbour_cells(self, my_board, x, y):
-        """return number of mines in neighbour cells given an x-y coordinate
-            Cell -->Current Cell(row, col)
-            N -->  North(row - 1, col)
-            S -->  South(row + 1, col)
-            E -->  East(row, col + 1)
-            W -->  West(row, col - 1)
-            N.E --> North - East(row - 1, col + 1)
-            N.W --> North - West(row - 1, col - 1)
-            S.E --> South - East(row + 1, col + 1)
-            S.W --> South - West(row + 1, col - 1)
-        """
-        for _x in range(x-1, x+2):
-            for _y in range(y-1, y+2):
-                if is_valid(_x, _y):
-                    if is_new_move(my_board, _x, _y):
-                        my_board[_x, _y] = self.count_neighbour_mines(_x, _y)
-                        if my_board[_x, _y] == 0:
-                            my_board = self.open_neighbour_cells(my_board, _x, _y)
-        return my_board
-
-    def get_next_state(self, state, x, y):
-        """
-        Get the next state.
-        Parameters
-        ----
-        state : (np.array)   visible board
-        x : int    location
-        y : int    location
-        Returns
-        ----
-        next_state : (np.array)    next visible board
-        game_over : (bool) true if game over
-        """
-        my_board = state
-        game_over = False
-        if is_mine(self.board, x, y):
-            my_board[x, y] = MINE
-            game_over = True
-        else:
-            my_board[x, y] = self.count_neighbour_mines(x, y)
-            if my_board[x, y] == 0:
-                my_board = self.open_neighbour_cells(my_board, x, y)
-        self.my_board = my_board
-        return my_board, game_over
-
-    def reset(self):
-        """
-        Reset a new game episode. See gym.Env.reset()
-        Returns
-        ----
-        next_state : (np.array, int)    next board
-        """
-        self.my_board = np.ones((self.board_size, self.board_size), dtype=int) * CLOSED
-        self.board = place_mines(self.board_size, self.num_mines)
-        self.num_actions = 0
-        self.valid_actions = np.ones((self.board_size * self.board_size), dtype=bool)
-
-        return self.my_board
-
-    def step(self, action):
-        """
-        See gym.Env.step().
-        Parameters
-        ----
-        action : np.array    location
-        Returns
-        ----
-        next_state : (np.array)    next board
-        reward : float        the reward for action
-        done : bool           whether the game end or not
-        info : {}             {'valid_actions': valid_actions} - a binary vector,
-                                where false cells' values are already known to observer
-        """
-        state = self.my_board
-        x = int(action / self.board_size)
-        y = int(action % self.board_size)
-        # print("-----")
-        # print(action)
-        # print(x)
-        # print(y)
-
-        # test valid action - uncomment this part to test your action filter if needed
-        # if bool(self.valid_actions[action]) is False:
-        #    raise Exception("Invalid action was selected! Action Filter: {}, "
-        #                    "action taken: {}".format(self.valid_actions, action))
-
-        next_state, reward, done, info = self.next_step(state, x, y)
-        self.my_board = next_state
-        self.num_actions += 1
-        self.valid_actions = (next_state.flatten() == CLOSED)
-        info['valid_actions'] = self.valid_actions
-        info['num_actions'] = self.num_actions
-        return next_state, reward, done, info
-
-    def next_step(self, state, x, y):
-        """
-        Get the next observation, reward, done, and info.
-        Parameters
-        ----
-        state : (np.array)    visible board
-        x : int    location
-        y : int    location
-        Returns
-        ----
-        next_state : (np.array)    next visible board
-        reward : float               the reward
-        done : bool           whether the game end or not
-        info : {}
-        """
-        my_board = state
-        if not is_new_move(my_board, x, y):
-            return my_board, 0, False, {}
-        while True:
-            state, game_over = self.get_next_state(my_board, x, y)
-            if not game_over:
-                #print(my_board)
-                #print(state)
-                if is_win(state):
-                    return state, 100, True, {}
-                elif (my_board == state).all():
-                    return state, -10, False, {}
-                else:
-                    return state, 10, False, {}
-            else:
-                return state, -100, True, {}
-
-    def render(self, mode='human'):
-        """
-        See gym.Env.render().
-        """
-        outfile = StringIO() if mode == 'ansi' else sys.stdout
-        s = board2str(self.my_board)
-        outfile.write(s)
-        if mode != 'human':
-            return outfile
-
-
-# In[4]:
-
-
-# env 2
 
 import random
 import numpy as np
@@ -618,12 +432,6 @@ class MinesweeperEnv(object):
         return self.state_im, reward, done, {} 
 
 
-# In[5]:
-
-
-env = MinesweeperEnv(4,4,4)
-
-
 # In[7]:
 
 
@@ -665,3 +473,90 @@ env.window.close(True)
 # RESET
 env.reset()
 
+
+
+# Parameter tuning
+
+total_episodes = [10,100,1000,10000,100000,100000]      
+learning_rate = [0.7]  
+# Max steps per episode        
+max_steps = 99        
+# Discounting rate       
+gamma = 0.95                 
+# Exploration rate
+epsilon = 1.0                 
+max_epsilon = 1.0             # Exploration probability at start
+min_epsilon = 0.01            # Minimum exploration probability 
+# Exponential decay rate for exploration prob
+decay_rate = 0.005            
+
+
+qtable = {}
+
+# List of rewards
+rewards = []
+
+for episode in range(total_episodes):
+    
+    # Reset the environment
+    state = env.reset()
+    state_str = board2str(state)
+
+    # Is this state seen? If not, add it to qtable and initialize the action array to 0
+    if not state_str in qtable: 
+        qtable[state_str] = np.zeros(action_size)
+    
+    step = 0
+    done = False
+    total_rewards = 0
+    
+    for step in range(max_steps):
+        state_str = board2str(state)
+        ## First we randomize a number
+        exp_exp_tradeoff = random.uniform(0, 1)
+        
+        ## If this number > greater than epsilon --> exploitation (taking the biggest Q value for this state)
+        if exp_exp_tradeoff > epsilon:
+            
+            #action = np.argmax(qtable[flattened_state, :])
+            #print(exp_exp_tradeoff, "action", action)
+            action = np.argmax(qtable[state_str])
+
+
+        # Else doing a random choice --> exploration
+        else:
+            action = env.action_space.sample()
+            #print("action random", action)
+            
+        
+        # Take the action (a) and observe the outcome state(s') and reward (r)
+        new_state, reward, done, info = env.step(action)
+        new_state_str = board2str(new_state)
+        if not new_state_str in qtable: 
+          qtable[new_state_str] = np.zeros(action_size)
+
+        # Update Q(s,a):= Q(s,a) + lr [R(s,a) + gamma * max Q(s',a') - Q(s,a)]
+        # qtable[new_state,:] : all the actions we can take from new state
+     
+        #print("before:",qtable[state_str][action])
+        qtable[state_str][action] = qtable[state_str][action] + learning_rate * (reward + gamma * np.max(qtable[new_state_str]) - qtable[state_str][action])
+        #print(np.max(qtable[new_state_str]))
+        #print("after:",qtable[state_str][action])
+        #qtable[state, action] = qtable[state, action] + learning_rate * (reward + gamma * np.max(qtable[new_state, :]) - qtable[state, action])
+        total_rewards += reward
+        
+        # Our new state is state
+        state = new_state
+        
+        # If done (if we're dead) : finish episode
+        if done == True: 
+            break
+        
+    # Reduce epsilon (because we need less and less exploration)
+    epsilon = min_epsilon + (max_epsilon - min_epsilon)*np.exp(-decay_rate*episode) 
+    rewards.append(total_rewards)
+    #print("episode:", episode, "reward:", total_rewards)
+    
+
+print ("Score over time: " +  str(sum(rewards)/total_episodes))
+print()
